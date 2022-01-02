@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
-
-from flask import Flask, render_template, request
-app = Flask(__name__)
+import threading
 
 import numpy as np
-from pyroombaadapter import PyRoombaAdapter
+from flask import Flask, render_template
+from pyroombaadapter import PyRoombaAdapter, PacketType, OIMode
+from roomba_functions import stop_moving_for_bump_or_wheel_drop
 
+# Globals
+app = Flask(__name__)
 
 # I guess PyRoombaAdapter expects radians per second?
 ROTATION_SPEED = np.radians(10)
 SPEED_MS = 0.15
 
-
 # Intended to be run on a Raspberry Pi Zero
 roomba = PyRoombaAdapter("/dev/ttyS0")
+lock = threading.Lock()
+stop_moving_for_bump_or_wheel_drop(roomba, lock)
 
 
 @app.route('/')
@@ -35,6 +38,8 @@ def button(button):
     elif button == 'right':
         rotation_speed = -ROTATION_SPEED
 
-    roomba.move(forward_speed, rotation_speed)
+    with lock:
+        roomba.change_mode_to_safe()
+        roomba.move(forward_speed, rotation_speed)
 
     return 'ok'
