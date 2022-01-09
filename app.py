@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import threading
+from typing import Optional
 
 import numpy as np
 from flask import Flask, render_template
 from pyroombaadapter import PyRoombaAdapter, PacketType, OIMode
-from roomba_functions import stop_moving_for_bump_or_wheel_drop
+from roomba_functions import stop_moving_for_bump_or_wheel_drop, get_line_follower_thread
+
 
 # Globals
 app = Flask(__name__)
@@ -17,6 +19,9 @@ SPEED_MS = 0.15
 roomba = PyRoombaAdapter("/dev/ttyS0")
 lock = threading.Lock()
 stop_moving_for_bump_or_wheel_drop(roomba, lock)
+
+line_follower_thread: Optional[threading.Thread] = None
+line_follower_stop_signal: threading.Event
 
 
 @app.route('/')
@@ -37,6 +42,18 @@ def button(button):
         rotation_speed = ROTATION_SPEED
     elif button == 'right':
         rotation_speed = -ROTATION_SPEED
+
+    elif button == 'line_follow_start':
+        global line_follower_thread, line_follower_stop_signal
+        line_follower_thread, line_follower_stop_signal = get_line_follower_thread(roomba, lock)
+        line_follower_thread.start()
+
+    elif button == 'line_follow_stop':
+        global line_follower_thread, line_follower_stop_signal
+        if line_follower_thread is not None:
+            line_follower_stop_signal.set()
+            line_follower_thread.join()
+            line_follower_thread = None
 
     with lock:
         roomba.change_mode_to_safe()
