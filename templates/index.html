@@ -26,6 +26,15 @@
     <div class="display-2">
         <i id="arrow-down" class="bi bi-caret-down-square"></i>
     </div>
+
+    <div class="display-2">
+        <i id="line-follow-start" class="bi bi-camera-video-fill"></i>
+        <i id="line-follow-stop" class="bi bi-camera-video-off-fill"></i>
+    </div>
+    <div class="display-2">
+        <img src="{{ url_for('video_feed') }}" width="50%">
+    </div>
+
 </div>
 
 <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
@@ -50,6 +59,14 @@ $(document).ready(function() {
   });
   $('#stop').click(function(e) {
     $.post('button/stop');
+  });
+
+
+  $('#line-follow-start').click(function(e) {
+    $.post('button/line_follow_start');
+  });
+  $('#line-follow-stop').click(function(e) {
+    $.post('button/line_follow_stop');
   });
 
 });
